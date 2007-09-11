@@ -174,6 +174,9 @@ class tx_extjs {
 		// second the adapter
 		// NOTE: the base-adapter-lib has to be included externally before this
 		switch ($GLOBALS['tx_extjs']['adapter'])	{
+			case 'ext':
+				$returnArr['js'][] = '<script type="text/javascript" src="' . $path . 'adapter/ext/ext-base.js"></script>';
+				break;
 			case 'jquery':
 				$returnArr['js'][] = '<script type="text/javascript" src="' . $path . 'adapter/jquery/jquery-plugins.js"></script>';
 				$returnArr['js'][] = '<script type="text/javascript" src="' . $path . 'adapter/jquery/ext-jquery-adapter.js"></script>';
@@ -192,9 +195,9 @@ class tx_extjs {
 	}
 
 	/**
-	 * set value which adapter should be used (jquery, prototype, yui)
+	 * set value which adapter should be used (ext, jquery, prototype, yui)
 	 */
-	function setAdapter($adapter='yui')	{
+	function setAdapter($adapter='ext')	{
 		$GLOBALS['tx_extjs']['adapter'] = (string)$adapter;
 	}
 
