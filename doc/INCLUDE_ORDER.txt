@@ -1,6 +1,15 @@
+All adapter related files below are located in 
+/adapters/<lib name>/ of this zip file.
+
 Your include order should be:
 
-Yahoo UI! (.12+)
+Ext Stand-alone
+-------------------------------------------------------------------
+ext-base.js
+ext-all.js (or your choice of files)
+
+
+Yahoo! UI (.12+)
 -------------------------------------------------------------------
 yui-utilities.js
 ext-yui-adapter.js

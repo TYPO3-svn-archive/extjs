@@ -1,5 +1,7 @@
 plugin.tx_extjs {
-	adapter = yui
+	adapter = ext
 	compressed = true
 	resource = default
+	language =
+	no_css = false
 }
