@@ -155,18 +155,18 @@ class tx_extjs {
 		// first the css
 		switch ($GLOBALS['tx_extjs']['resource'])	{
 			case 'aero':
-				$returnArr['css'][] = '@import url("' . $path . 'resources/css/ytheme-aero.css");';
+				$returnArr['css'][] = '@import url("' . $path . 'resources/css/xtheme-aero.css");';
 				$returnArr['additional_js'] = 'Ext.BLANK_IMAGE_URL = "' . $path . 'resources/images/aero/s.gif";';
 				break;
 			case 'default':
 				$returnArr['additional_js'] = 'Ext.BLANK_IMAGE_URL = "' . $path . 'resources/images/default/s.gif";';
 				break;
 			case 'gray':
-				$returnArr['css'][] = '@import url("' . $path . 'resources/css/ytheme-gray.css");';
+				$returnArr['css'][] = '@import url("' . $path . 'resources/css/xtheme-gray.css");';
 				$returnArr['additional_js'] = 'Ext.BLANK_IMAGE_URL = "' . $path . 'resources/images/gray/s.gif";';
 				break;
 			case 'vista':
-				$returnArr['css'][] = '@import url("' . $path . 'resources/css/ytheme-vista.css");';
+				$returnArr['css'][] = '@import url("' . $path . 'resources/css/xtheme-vista.css");';
 				$returnArr['additional_js'] = 'Ext.BLANK_IMAGE_URL = "' . $path . 'resources/images/vista/s.gif";';
 				break;
 		}
