@@ -3,4 +3,5 @@ plugin.tx_extjs {
 	compressed = true
 	resource = default
 	language =
+	no_css = false
 }

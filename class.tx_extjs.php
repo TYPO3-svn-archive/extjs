@@ -53,6 +53,10 @@ class tx_extjs {
 		);
 		$fileArr = tx_extjs::getLibs($BACK_PATH . '../' . t3lib_extMgm::siteRelPath('extjs'));
 
+		if ($GLOBALS['tx_extjs']['no_css']) {
+			$fileArr['css'] = array();
+		}
+
 		if (!$GLOBALS['tx_extjs']['tx_extjs_inc']) {
 			$returnArr['css'] = implode("\n", $fileArr['css']);
 			$returnArr['additional_js'] = $fileArr['additional_js'];
@@ -69,6 +73,10 @@ class tx_extjs {
 	 */
 	function includeLib()	{
 		$fileArr = tx_extjs::getLibs(t3lib_extMgm::siteRelPath('extjs'));
+
+		if ($GLOBALS['tx_extjs']['no_css']) {
+			$fileArr['css'] = array();
+		}
 
 		if (!$GLOBALS['tx_extjs']['tx_extjs_inc']) {
 
@@ -112,7 +120,7 @@ class tx_extjs {
 
 			if (isset($GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_extjs.']['compressed']))	{
 
-				if (strCaseCmp($GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_jextjs.']['compressed'], 'true') == 0)	{
+				if (strCaseCmp($GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_extjs.']['compressed'], 'true') == 0)	{
 					tx_extjs::setCompressed(TRUE);
 				} else {
 					tx_extjs::setCompressed(FALSE);
@@ -131,8 +139,8 @@ class tx_extjs {
 
 		if (!isset($GLOBALS['tx_extjs']['adapter']))	{
 
-			if (isset($GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_extjs']['adapter']))	{
-				tx_extjs::setAdapter($GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_extjs']['adapter']);
+			if (isset($GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_extjs.']['adapter']))	{
+				tx_extjs::setAdapter($GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_extjs.']['adapter']);
 			} else {
 				tx_extjs::setAdapter();
 			}
@@ -141,8 +149,8 @@ class tx_extjs {
 
 		if (!isset($GLOBALS['tx_extjs']['resource']))	{
 
-			if (isset($GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_extjs']['resource']))	{
-				tx_extjs::setResource($GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_extjs']['resource']);
+			if (isset($GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_extjs.']['resource']))	{
+				tx_extjs::setResource($GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_extjs.']['resource']);
 			} else {
 				tx_extjs::setResource();
 			}
@@ -151,10 +159,26 @@ class tx_extjs {
 
 		if (!isset($GLOBALS['tx_extjs']['language'])) {
 
-			if (isset($GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_extjs']['language'])) {
-				tx_extjs::setLanguage($GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_extjs']['language']);
+			if (isset($GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_extjs.']['language'])) {
+				tx_extjs::setLanguage($GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_extjs.']['language']);
 			} else {
 				tx_extjs::setLanguage();
+			}
+
+		}
+
+		if (!isset($GLOBALS['tx_extjs']['no_css'])) {
+
+			if (isset($GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_extjs.']['no_css'])) {
+
+				if (strCaseCmp($GLOBALS['TSFE']->tmpl->setup['plugin.]['tx_extjs.']['no_css'], 'true') == 0) {
+					tx_extjs::setCompressed(TRUE);
+				} else {
+					tx_extjs::setNoCSS(FALSE);
+				}
+
+			} else {
+				tx_extjs::setNoCSS();
 			}
 
 		}
@@ -237,6 +261,13 @@ class tx_extjs {
 	 */
 	function setLanguage($lang='') {
 		$GLOBALS['tx_extjs']['language'] = (string)trim($lang);
+	}
+
+	/**
+	 * set value if no css-files should be included at all
+	 */
+	function setNoCSS($var=FALSE) {
+		$GLOBALS['tx_extjs']['no_css'] = (bool)$var;
 	}
 
 }
