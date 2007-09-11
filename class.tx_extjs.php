@@ -149,6 +149,16 @@ class tx_extjs {
 
 		}
 
+		if (!isset($GLOBALS['tx_extjs']['language'])) {
+
+			if (isset($GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_extjs']['language'])) {
+				tx_extjs::setLanguage($GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_extjs']['language']);
+			} else {
+				tx_extjs::setLanguage();
+			}
+
+		}
+
 		// add everything to return-array
 		$returnArr['css'][] = '@import url("' . $path . 'resources/css/ext-all.css");';
 
@@ -190,7 +200,14 @@ class tx_extjs {
 				break;
 		}
 
+		// third the main js-file
 		$returnArr['js'][] = '<script type="text/javascript" src="' . $path . ($GLOBALS['tx_extjs']['compressed']==false?'uncompressed_':'') . 'src/ext-all.js"></script>';
+
+		// fourth the language
+		if (strCaseComp($GLOBALS['tx_extjs']['language'], '') != 0) {
+			$returnArr['js'][] = '<script type="text/javascript" src="' . $path . 'src/locale/ext-lang-' . $GLOBALS['tx_extjs']['language'] . '.js"></script>';
+		}
+
 		return $returnArr;
 	}
 
@@ -213,6 +230,13 @@ class tx_extjs {
 	 */
 	function setCompressed($var=TRUE)	{
 		$GLOBALS['tx_extjs']['compressed'] = (bool)$var;
+	}
+
+	/**
+	 * set value which language should be used
+	 */
+	function setLanguage($lang='') {
+		$GLOBALS['tx_extjs']['language'] = (string)trim($lang);
 	}
 
 }
