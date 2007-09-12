@@ -171,7 +171,7 @@ class tx_extjs {
 
 			if (isset($GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_extjs.']['no_css'])) {
 
-				if (strCaseCmp($GLOBALS['TSFE']->tmpl->setup['plugin.]['tx_extjs.']['no_css'], 'true') == 0) {
+				if (strCaseCmp($GLOBALS['TSFE']->tmpl->setup['plugin.']['tx_extjs.']['no_css'], 'true') == 0) {
 					tx_extjs::setCompressed(TRUE);
 				} else {
 					tx_extjs::setNoCSS(FALSE);
@@ -228,7 +228,7 @@ class tx_extjs {
 		$returnArr['js'][] = '<script type="text/javascript" src="' . $path . ($GLOBALS['tx_extjs']['compressed']==false?'uncompressed_':'') . 'src/ext-all.js"></script>';
 
 		// fourth the language
-		if (strCaseComp($GLOBALS['tx_extjs']['language'], '') != 0) {
+		if (strCaseCmp($GLOBALS['tx_extjs']['language'], '') != 0) {
 			$returnArr['js'][] = '<script type="text/javascript" src="' . $path . 'src/locale/ext-lang-' . $GLOBALS['tx_extjs']['language'] . '.js"></script>';
 		}
 
