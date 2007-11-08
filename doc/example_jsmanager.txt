@@ -1,0 +1,14 @@
+# example jsmanager config
+plugin.tx_jsmanager_Executor.libs {
+	order = extjs
+	config {
+		extjs {
+			version = max
+			variant = minimized
+			adapter = ext
+			resource = gray
+			language = de
+			no_css = 0
+		}
+	}
+}

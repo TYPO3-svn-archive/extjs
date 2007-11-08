@@ -24,18 +24,385 @@
 /**
  * Plugin 'Ext JS' for the 'extjs' extension.
  *
- * @author	Joerg Schoppet <joerg@schoppet.de>
+ * This class performs the inclusion of the required files for the extjs lib
+ * 
+ * @package		TYPO3
+ * @subpackage	extjs
+ * @author		Joerg Schoppet <joerg@schoppet.de>
+ * @version		SVN: $Id$
  */
-
-
-
-class tx_extjs {
-	var $prefixId = 'tx_extjs';		// Same as class name
-	var $scriptRelPath = 'class.tx_extjs.php';	// Path to this script relative to the extension dir.
-	var $extKey = 'extjs';	// The extension key.
+class tx_extjs implements tx_jsmanager_ManagerInterface {
 
 	/**
-	 * dummy
+	 * holds the state, if jsmanager has included this ext
+	 * 
+	 * @var	bool
+	 */
+	protected $isIncluded = FALSE;
+
+	/**
+	 * holds the TS-config, provided by jsmanager
+	 * 
+	 * @var	array
+	 */
+	protected $configuration = array();
+
+	/**
+	 * @deprecated	deprecated since dependency of jsmanager
+	 */
+	var $prefixId = 'tx_extjs';
+
+	/**
+	 * @deprecated	deprecated since dependency of jsmanager
+	 */
+	var $scriptRelPath = 'class.tx_extjs.php';
+
+	/**
+	 * @deprecated	deprecated since dependency of jsmanager
+	 */
+	var $extKey = 'extjs';
+
+	/**
+	 * dummy method, extjs needs no config, but can have one
+	 *
+	 * @return	bool
+	 */
+	public function checkConfiguration(array $configuration) {
+		$this->configuration = $configuration;
+		return true;
+	}
+
+	/**
+	 * main method, which processes the TS-Config and returns the
+	 * header-data
+	 *
+	 * @return	string
+	 */
+	public function getHeaderData() {
+
+		// Which version should be included?
+		// Fallback is the latest variant
+		$availableVersions = $this->getVersions();
+		$version = $availableVersions[count($availableVersions)-1];
+
+		if (array_key_exists('version', $this->configuration)) {
+
+			if (strcasecmp($this->configuration['version'], 'max') == 0) {
+				$version = $availableVersions[count($availableVersions)-1];
+			} else {
+
+				if (in_array($this->configuration['version'], $availableVersions)) {
+					$version = $this->configuration['version'];
+				} else {
+					$version = $availableVersions[count($availableVersions)-1];
+				}
+
+			}
+
+		}
+
+		// Which variant should be used?
+		// Fallback is the normal variant, then the minimized and then the packed
+		$variant = '';
+		$variantFile = '';
+		$availableVariants = $this->getVariants($version);
+		$variant = 'normal';
+		$variantFile = $availableVariants['normal'];
+
+		if (array_key_exists('variant', $this->configuration)) {
+
+			if (array_key_exists($this->configuration['variant'], $availableVariants)) {
+				$variant = $this->configuration['variant'];
+				$variantFile = $availableVariants[$this->configuration['variant']];
+			}
+
+		}
+
+		// Which adapter should be used?
+		// Fallback is ext
+		$adapter = '';
+		$adapterFiles = array();
+		$availableAdapters = $this->getAdapters($version);
+		$adapter = 'ext';
+		$adapterFiles = $availableAdapters['ext'];
+
+		if (array_key_exists('adapter', $this->configuration)) {
+
+			if (array_key_exists($this->configuration['adapter'], $availableAdapters)) {
+				$adapter = $this->configuration['adapter'];
+				$adapterFiles = $availableAdapters[$this->configuration['adapter']];
+			}
+
+		}
+
+		// Should a special language-file be loaded?
+		// Fallback is nothing
+		$language = '';
+		$languageFile = '';
+		$availableLanguages = $this->getLanguages($version, $variant);
+
+		if (array_key_exists('language', $this->configuration) && strlen($this->configuration['language']) > 0) {
+
+			if (array_key_exists($this->configuration['language'], $availableLanguages)) {
+				$language = $this->configuration['language'];
+				$languageFile = $availableLanguages[$this->configuration['language']];
+			}
+
+		}
+
+		// Which resource should be used?
+		// Fallback is 'default'
+		// Only resources are available, which have an images-dir and a css-file
+		$resource = '';
+		$resourceFile = '';
+		$availableResources = $this->getResources($version);
+		$resource = 'default';
+
+		if (array_key_exists('resource', $this->configuration) && strlen($this->configuration['resource']) > 0) {
+
+			if (array_key_exists($this->configuration['resource'], $availableResources)) {
+				$resource = $this->configuration['resource'];
+				$resourceFile = $availableResources[$this->configuration['resource']];
+			}
+
+		}
+
+		// Should no css be included at all?
+		$noCSS = FALSE;
+
+		if (array_key_exists('no_css', $this->configuration)) {
+			$noCSS = (bool)$this->configuration['no_css'];
+		}
+
+		// Now we can process everything
+		$headerData = '';
+		// 1. css
+		if (!$noCSS) {
+			$headerData .= '
+<style type="text/css">
+	/*<![CDATA[*/
+	<!--
+';
+			$headerData .= '@import url("' . t3lib_extMgm::siteRelPath('extjs') . 'versions/' . $version . '/resources/css/ext-all.css' . '");';
+
+			if (strcasecmp($resource, 'default') != 0) {
+				$headerData .= "\n" . '@import url("' . t3lib_extMgm::siteRelPath('extjs') . 'versions/' . $version . '/resources/css/' . $resourceFile . '");';
+			} // if (strcasecmp($resource, 'default') != 0)
+
+			$headerData .= '
+	// -->
+	/*]]>*/
+</style>
+';
+		} // if (!$noCSS)
+
+		// 2. Adapter
+		foreach ($adapterFiles as $file) {
+			$headerData .= '<script type="text/javascript" src="' . t3lib_extMgm::siteRelPath('extjs') . 'versions/' . $version . '/adapter/' . $adapter . '/' . $file . '"></script>' . "\n";
+		} // foreach ($adapterFiles as $file)
+
+		// 3. Main js-file
+		$headerData .= '<script type="text/javascript" src="' . t3lib_extMgm::siteRelPath('extjs') . 'versions/' . $version . '/source/' . $variantFile . '"></script>' . "\n";
+
+		// 4. language-file
+		if (strlen($language) > 0) {
+			$headerData .= '<script type="text/javascript" src="' . t3lib_extMgm::siteRelPath('extjs') . 'versions/' . $version . '/source/locale/' . $languageFile . '"></script>' . "\n";
+		} // if (strlen($language) > 0)
+
+		// 5. BLANK-IMG
+		$headerData .= '
+<script type="text/javascript">
+	/*<![CDATA[*/
+	<!--
+		Ext.BLANK_IMAGE_URL = "' . t3lib_extMgm::siteRelPath('extjs') . 'versions/' . $version . '/resources/images/' . $resource . '/s.gif";
+	// -->
+	/*]]>*/
+</script>
+';
+
+		return $headerData;
+	}
+
+	/**
+	 * getter-method for the isIncluded-var
+	 *
+	 * @return	bool
+	 */
+	public function checkIsIncluded() {
+		return $this->isIncluded;
+	}
+
+	/**
+	 * setter-method for the isIncluded-var
+	 *
+	 * @param	bool	$isIncluded
+	 * @return	void
+	 */
+	public function setIsIncluded($isIncluded = TRUE) {
+		$this->isIncluded = $isIncluded;
+	}
+
+	/**
+	 * Returns all available versions of extjs.
+	 * To achieve this, it iterates over the versions-directory.
+	 * 
+	 * @return	array
+	 */
+	protected function getVersions() {
+		$versions = array();
+		$directory = new DirectoryIterator(t3lib_extMgm::extPath('extjs', 'versions'));
+
+		foreach ($directory as $entry) {
+			if ($entry->isDir() && !$entry->isDot() && is_numeric(substr($entry->getFilename(), 0, 1))) {
+				$versions[] = $entry->getFilename();
+			}
+		}
+
+		return $versions;
+	}
+
+	/**
+	 * Returns all available variants of the extjs-main-js-class (ext-all)
+	 * To achieve this, it iterates over the source-directory.
+	 * 
+	 * @param	string	$version	Version, to know, in which directory to search
+	 * @return	array
+	 */
+	protected function getVariants($version) {
+		$possibleVariants = array(
+			'normal' => '.',
+			'minimized' => '.min.',
+		);
+		$variants = array();
+		$directory = new DirectoryIterator(t3lib_extMgm::extPath('extjs', 'versions/' . $version . '/source'));
+
+		foreach ($directory as $entry) {
+
+			if ($entry->isFile()) {
+				$fileName = $entry->getFilename();
+				$fileName = str_replace('ext-all', '', $fileName);
+				$fileName = str_replace('js', '', $fileName);
+				$variant = array_search($fileName, $possibleVariants);
+
+				if ($variant) {
+					$variants[$variant] = $entry->getFilename();
+				}
+
+			}
+
+		}
+
+		return $variants;
+	}
+
+	/**
+	 * Returns all available adapters.
+	 * To achieve this, it iterates over the adapter-directory
+	 * 
+	 * @param	string	$version	Version, to know, in which directory to search
+	 * @return	array
+	 */
+	protected function getAdapters($version) {
+		$adapters = array();
+		$directory = new DirectoryIterator(t3lib_extMgm::extPath('extjs', 'versions/' . $version . '/adapter'));
+
+		foreach ($directory as $entry) {
+
+			if ($entry->isDir() && !$entry->isDot() && substr($entry->getFilename(), 0, 1) !== '.') {
+				$adapter = $entry->getFilename();
+				$adapterDirectory = new DirectoryIterator(t3lib_extMgm::extPath('extjs', 'versions/' . $version . '/adapter/' . $adapter));
+				$files = array();
+
+				foreach ($adapterDirectory as $adapterEntry) {
+
+					if ($adapterEntry->isFile()) {
+						$files[] = $adapterEntry->getFilename();
+					}
+
+				}
+
+				$adapters[$adapter] = $files;
+			}
+
+		}
+
+		return $adapters;
+	}
+
+	/**
+	 * Returns all availabe languages.
+	 * To achieve this, it iterates over the locale-directory
+	 * 
+	 * @param	string	$version	Version, to know, in which directory to search
+	 * @param	string	$variant	Variant, to know, in which directory to search
+	 * @return	array
+	 */
+	protected function getLanguages($version, $variant) {
+		$languages = array();
+		$directory = new DirectoryIterator(t3lib_extMgm::extPath('extjs', 'versions/' . $version . '/source/locale/' . $variant));
+
+		foreach ($directory as $entry) {
+
+			if ($entry->isFile()) {
+				$fileName = $entry->getFilename();
+				$fileName = str_replace('ext-lang-', '', $fileName);
+				$fileName = str_replace(($variant=='minimized')?'-min.js':'.js', '', $fileName);
+				$languages[$fileName] = $entry->getFilename();
+			}
+
+		}
+
+		return $languages;
+	}
+
+	/**
+	 * Returns all available themes.
+	 * To achieve this, it iterates over the images- and css-directory
+	 * 
+	 * @param	string	$version	Version, to know, in which directory to search
+	 * @return	array
+	 */
+	protected function getResources($version) {
+		$resources = array();
+		$imageDirectory = new DirectoryIterator(t3lib_extMgm::extPath('extjs', 'versions/' . $version . '/resources/images'));
+		$cssDirectory = new DirectoryIterator(t3lib_extMgm::extPath('extjs', 'versions/' . $version . '/resources/css'));
+
+		foreach ($imageDirectory as $entry) {
+
+			if ($entry->isDir() && !$entry->isDot() && substr($entry->getFilename(), 0, 1) !== '.' && strcasecmp($entry->getFilename(), 'default') != 0) {
+				$resources[$entry->getFilename()] = '';
+			}
+
+		}
+
+		foreach ($cssDirectory as $entry) {
+
+			if ($entry->isFile() && substr($entry->getFilename(), 0, 7) == 'xtheme-') {
+				$fileName = $entry->getFilename();
+				$fileName = str_replace('xtheme-', '', $fileName);
+				$fileName = str_replace('.css', '', $fileName);
+
+				if (array_key_exists($fileName, $resources)) {
+					$resources[$fileName] = $entry->getFilename();
+				}
+
+			}
+
+		}
+
+		foreach ($resources as $resourceName => $resourceFile) {
+
+			if ($resourceFile == '') {
+				unset($resources[$resourceName]);
+			}
+
+		}
+
+		return $resources;
+	}
+
+	/**
+	 * @deprecated	deprecated since dependency of jsmanager
 	 */
 	function main($content,$conf)	{
 	}
@@ -43,6 +410,8 @@ class tx_extjs {
 	/**
 	 * include the library and other data for page renderung into a BE-site
 	 * any configuration has to be done before with the set-fucntions
+	 * 
+	 * @deprecated	deprecated since dependency of jsmanager
 	 */
 	function BEincludeLib() {
 		global $BACK_PATH;
@@ -70,6 +439,8 @@ class tx_extjs {
 	/**
 	 * include the library and other data for page rendering into a FE-site
 	 * any configuration has to be done before with the set-functions
+	 * 
+	 * @deprecated	deprecated since dependency of jsmanager
 	 */
 	function includeLib()	{
 		$fileArr = tx_extjs::getLibs(t3lib_extMgm::siteRelPath('extjs'));
@@ -108,6 +479,9 @@ class tx_extjs {
 
 	}
 
+	/**
+	 * @deprecated	deprecated since dependency of jsmanager
+	 */
 	function getLibs($path) {
 		$returnArr = array(
 			'css' => array(),
@@ -237,6 +611,8 @@ class tx_extjs {
 
 	/**
 	 * set value which adapter should be used (ext, jquery, prototype, yui)
+	 * 
+	 * @deprecated	deprecated since dependency of jsmanager
 	 */
 	function setAdapter($adapter='ext')	{
 		$GLOBALS['tx_extjs']['adapter'] = (string)$adapter;
@@ -244,6 +620,8 @@ class tx_extjs {
 
 	/**
 	 * set value which theme should be used (aero, default, gray, vista)
+	 * 
+	 * @deprecated	deprecated since dependency of jsmanager
 	 */
 	function setResource($resource='default')	{
 		$GLOBALS['tx_extjs']['resource'] = (string)$resource;
@@ -251,6 +629,8 @@ class tx_extjs {
 
 	/**
 	 * set value if compressed scripts should be included
+	 * 
+	 * @deprecated	deprecated since dependency of jsmanager
 	 */
 	function setCompressed($var=TRUE)	{
 		$GLOBALS['tx_extjs']['compressed'] = (bool)$var;
@@ -258,6 +638,8 @@ class tx_extjs {
 
 	/**
 	 * set value which language should be used
+	 * 
+	 * @deprecated	deprecated since dependency of jsmanager
 	 */
 	function setLanguage($lang='') {
 		$GLOBALS['tx_extjs']['language'] = (string)trim($lang);
@@ -265,6 +647,8 @@ class tx_extjs {
 
 	/**
 	 * set value if no css-files should be included at all
+	 * 
+	 * @deprecated	deprecated since dependency of jsmanager
 	 */
 	function setNoCSS($var=FALSE) {
 		$GLOBALS['tx_extjs']['no_css'] = (bool)$var;
