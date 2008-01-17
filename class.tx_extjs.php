@@ -74,11 +74,11 @@ class tx_extjs implements tx_jsmanager_ManagerInterface {
 
 	/**
 	 * main method, which processes the TS-Config and returns the
-	 * header-data
+	 * data
 	 *
 	 * @return	string
 	 */
-	public function getHeaderData() {
+	public function getData() {
 
 		// Which version should be included?
 		// Fallback is the latest variant
@@ -174,22 +174,67 @@ class tx_extjs implements tx_jsmanager_ManagerInterface {
 			$noCSS = (bool)$this->configuration['no_css'];
 		}
 
+		// Should a loading-indicator be displayed?
+		$loading = FALSE;
+
+		if (array_key_exists('loading', $this->configuration)) {
+			$loading = (bool)$this->configuration['loading'];
+		}
+
+		// Should plugins be included?
+		$pluginFiles = array();
+
+		if (array_key_exists('plugins', $this->configuration) && strlen($this->configuration['plugins']) > 0) {
+			$plugins = explode(',', $this->configuration['plugins']);
+			$pattern = "|{([a-zA-Z0-9]*)}|";
+
+			foreach ($plugins as $plugin) {
+				$file = '';
+
+				if (array_key_exists('plugins.', $this->configuration) && array_key_exists($plugin, $this->configuration['plugins.'])) {
+					$file = preg_replace($pattern . 'e', '$\1', $this->configuration['plugins.'][$plugin]);
+
+					if (strcmp(substr($file, 0, 4), 'EXT:') == 0) {
+						list($extKey, $filePart) = explode('/', substr($file, 4), 2);
+
+						if (strcmp($extKey, '') != 0 && t3lib_extMgm::isLoaded($extKey) && strcmp($filePart, '') != 0) {
+
+							if (file_exists(t3lib_extMgm::extPath($extKey) . $filePart)) {
+								$file = t3lib_extMgm::siteRelPath($extKey) . $filePart;
+							}
+
+						}
+
+					} else {
+
+						if (!file_exists(PATH_site . $file)) {
+							continue;
+						}
+					}
+
+					$pluginFiles[] = $file; 
+				}
+
+			}
+
+		}
+
 		// Now we can process everything
-		$headerData = '';
+		$data = '';
 		// 1. css
 		if (!$noCSS) {
-			$headerData .= '
+			$data .= '
 <style type="text/css">
 	/*<![CDATA[*/
 	<!--
 ';
-			$headerData .= '@import url("' . t3lib_extMgm::siteRelPath('extjs') . 'versions/' . $version . '/resources/css/ext-all.css' . '");';
+			$data .= '@import url("' . t3lib_extMgm::siteRelPath('extjs') . 'versions/' . $version . '/resources/css/ext-all.css' . '");';
 
 			if (strcasecmp($resource, 'default') != 0) {
-				$headerData .= "\n" . '@import url("' . t3lib_extMgm::siteRelPath('extjs') . 'versions/' . $version . '/resources/css/' . $resourceFile . '");';
+				$data .= "\n" . '@import url("' . t3lib_extMgm::siteRelPath('extjs') . 'versions/' . $version . '/resources/css/' . $resourceFile . '");';
 			} // if (strcasecmp($resource, 'default') != 0)
 
-			$headerData .= '
+			$data .= '
 	// -->
 	/*]]>*/
 </style>
@@ -198,19 +243,28 @@ class tx_extjs implements tx_jsmanager_ManagerInterface {
 
 		// 2. Adapter
 		foreach ($adapterFiles as $file) {
-			$headerData .= '<script type="text/javascript" src="' . t3lib_extMgm::siteRelPath('extjs') . 'versions/' . $version . '/adapter/' . $adapter . '/' . $file . '"></script>' . "\n";
+			$data .= '<script type="text/javascript" src="' . t3lib_extMgm::siteRelPath('extjs') . 'versions/' . $version . '/adapter/' . $adapter . '/' . $file . '"></script>' . "\n";
 		} // foreach ($adapterFiles as $file)
 
 		// 3. Main js-file
-		$headerData .= '<script type="text/javascript" src="' . t3lib_extMgm::siteRelPath('extjs') . 'versions/' . $version . '/source/' . $variantFile . '"></script>' . "\n";
+		$data .= '<script type="text/javascript" src="' . t3lib_extMgm::siteRelPath('extjs') . 'versions/' . $version . '/source/' . $variantFile . '"></script>' . "\n";
 
 		// 4. language-file
 		if (strlen($language) > 0) {
-			$headerData .= '<script type="text/javascript" src="' . t3lib_extMgm::siteRelPath('extjs') . 'versions/' . $version . '/source/locale/' . $languageFile . '"></script>' . "\n";
+			$data .= '<script type="text/javascript" src="' . t3lib_extMgm::siteRelPath('extjs') . 'versions/' . $version . '/source/locale/' . $languageFile . '"></script>' . "\n";
 		} // if (strlen($language) > 0)
 
-		// 5. BLANK-IMG
-		$headerData .= '
+		// 5. plugins
+		if (count($pluginFiles) > 0) {
+
+			foreach ($pluginFiles as $file) {
+				$data .= '<script type="text/javascript" src="' . $file . '"></script>' . "\n";
+			} // foreach ($pluginFiles as $file)
+
+		} // if (count($pluginFiles) > 0)
+
+		// 6. BLANK-IMG
+		$data .= '
 <script type="text/javascript">
 	/*<![CDATA[*/
 	<!--
@@ -220,7 +274,18 @@ class tx_extjs implements tx_jsmanager_ManagerInterface {
 </script>
 ';
 
-		return $headerData;
+		// 7. Should a loading indicator be displayed
+		// This make only sense, if jsmanager is configured to put everything in the body
+		if ($loading) {
+			$data = '
+<div id="loading-mask" style=""></div>
+<div id="loading">
+	<div class="loading-indicator"><img src="' . t3lib_extMgm::siteRelPath('extjs') . 'versions/' . $version . '/resources/images/default/wait.gif' . '" width="18" height="18" style="margin-right: 8px;" align="absmiddle" />Loading...</div>
+</div>
+			' . $data;
+		} // if ($loading)
+
+		return $data;
 	}
 
 	/**
@@ -258,6 +323,7 @@ class tx_extjs implements tx_jsmanager_ManagerInterface {
 			}
 		}
 
+		sort($versions);
 		return $versions;
 	}
 
