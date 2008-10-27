@@ -251,7 +251,7 @@ class tx_extjs implements tx_jsmanager_ManagerInterface {
 
 		// 4. language-file
 		if (strlen($language) > 0) {
-			$data .= '<script type="text/javascript" src="' . t3lib_extMgm::siteRelPath('extjs') . 'versions/' . $version . '/source/locale/' . $languageFile . '"></script>' . "\n";
+			$data .= '<script type="text/javascript" src="' . t3lib_extMgm::siteRelPath('extjs') . 'versions/' . $version . '/source/locale/' . $variant . '/' . $languageFile . '"></script>' . "\n";
 		} // if (strlen($language) > 0)
 
 		// 5. plugins
